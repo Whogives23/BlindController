@@ -15,3 +15,7 @@ I have had to create my own blind automation, as most found on the internet only
 ## Housing and Pulley:
 
 https://www.thingiverse.com/thing:5226120
+
+## Wiring Diagram:
+![image](https://user-images.githubusercontent.com/46109936/152308536-6e4d1266-f30f-4c90-9483-fd3ee6b22e6a.png)
+
