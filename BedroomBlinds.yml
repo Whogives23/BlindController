@@ -1,0 +1,419 @@
+esphome:
+  name: bedroom_blinds
+  platform: ESP8266
+  board: d1_mini
+#  on_boot:
+#    lambda: |-
+#        id(countkeep2).publish_state(0.0);
+#        id(targetstate).publish_state(0.0);
+#        id(lifetime_counter).publish_state(0.0);
+  #  stepper.report_position:
+   #  id: bedroom_motor
+    # position: 0
+
+wifi:
+  ssid: "YourSSID"
+  password: "YourPassword"
+    
+
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Bedroom Blinds Fallback Hotspot"
+    password: "123456"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  services:
+    - service: keep_count
+      variables:
+        target: int
+      then:
+        - sensor.template.publish:
+            id: countkeep
+            state: !lambda 'return target;'
+
+ota:
+
+globals:
+  - id: lifetime_counter
+    type: float
+    restore_value: no
+    initial_value: '0'
+         
+  - id: direction
+    type: float
+    restore_value: no
+    initial_value: '0'       
+  - id: targetstate
+    type: int
+    restore_value: no
+    initial_value: '0'       
+    
+  - id: destination
+    type: float
+    restore_value: no
+    initial_value: '0'  
+  
+  - id: destval1
+    type: float
+    restore_value: no
+    initial_value: '0.45'#1.1 
+  
+  - id: destval2
+    type: float
+    restore_value: no
+    initial_value: '2.7'
+  
+  - id: destval3
+    type: float
+    restore_value: no
+    initial_value: '20.0'
+  
+  - id: destval4
+    type: float
+    restore_value: no
+    initial_value: '2.25'
+switch:
+  - platform: template
+    name: "Bedroom Blind Slightly Open"
+    id: slightopen
+    turn_on_action:
+      - lambda: |-
+          id(targetstate) = 1;
+      - switch.turn_on: blindup
+
+  - platform: template
+    name: "Bedroom Blind Fully Open"
+    id: fullyopen
+    turn_on_action:
+      - lambda: |-
+          id(targetstate) = 3;
+      - switch.turn_on: blindup
+
+  - platform: template
+    name: "Bedroom Blind Standard Open"
+    id: standardopen
+    turn_on_action:
+      - lambda: |-
+          id(targetstate) = 2;
+      - switch.turn_on: blindup            
+
+  - platform: template
+    name: "Bedroom Blind Close"
+    id: closeblind
+    turn_on_action:
+      - lambda: |-
+          id(targetstate) = 0;
+      - switch.turn_on: blindup
+      
+  - platform: template
+    name: "Bedroom Blind Up"
+    id: blindup
+    turn_on_action:
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 0;
+              - lambda: |-
+                  return id(countkeep).state == 0;
+          then:
+            - lambda: |-
+                id(direction) = 0;
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 1;
+              - lambda: |-
+                  return id(countkeep).state == 0;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+(id(destval1)));
+            - lambda: |-
+                id(direction) = 1;
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 2;
+              - lambda: |-
+                  return id(countkeep).state == 0;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+(id(destval2)));
+            - lambda: |-
+                id(direction) = 1;
+
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 3;
+              - lambda: |-
+                  return id(countkeep).state == 0;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+ (id(destval3)));
+            - lambda: |-
+                id(direction) = 1;
+
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 0;
+              - lambda: |-
+                  return id(countkeep).state == 1;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+(id(destval1)));
+            - lambda: |-
+                id(direction) = 2;
+        
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 1;
+              - lambda: |-
+                  return id(countkeep).state == 1;
+          then:
+            - lambda: |-
+                id(direction) = 0;
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 2;
+              - lambda: |-
+                  return id(countkeep).state == 1;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+(id(destval4)));
+            - lambda: |-
+                id(direction) = 1;
+
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 3;
+              - lambda: |-
+                  return id(countkeep).state == 1;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+ 19.8);
+            - lambda: |-
+                id(direction) = 1;
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 0;
+              - lambda: |-
+                  return id(countkeep).state == 2;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+(id(destval2)));
+            - lambda: |-
+                id(direction) = 2;
+                
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 1;
+              - lambda: |-
+                  return id(countkeep).state == 2;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+(id(destval4))); 
+            - lambda: |-
+                id(direction) = 2;
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 2;
+              - lambda: |-
+                  return id(countkeep).state == 2;
+          then:
+            - lambda: |-
+                id(direction) = 0;
+
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 3;
+              - lambda: |-
+                  return id(countkeep).state == 2;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+ 12.8);
+            - lambda: |-
+                id(direction) = 1;
+                
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 0;
+              - lambda: |-
+                  return id(countkeep).state == 3;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+(id(destval3)));  
+            - lambda: |-
+                id(direction) = 2;
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 1;
+              - lambda: |-
+                  return id(countkeep).state == 3;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+1.5);
+            - lambda: |-
+                id(direction) = 2;
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 2;
+              - lambda: |-
+                  return id(countkeep).state == 3;
+          then:
+            - lambda: |-
+                id(destination) = (id(lifetime_counter)+12.8);
+            - lambda: |-
+                id(direction) = 2;
+
+      - if:
+          condition:
+            and:
+              - lambda: |-
+                  return id(targetstate) == 3;
+              - lambda: |-
+                  return id(countkeep).state == 3;
+          then:
+            - lambda: |-
+                id(direction) = 0;
+                
+                
+      - if:
+          condition:
+            - lambda: |-
+                return id(direction) == 1;
+          then:
+              -  switch.turn_on: motorinput1
+              - wait_until:
+                  lambda: |-
+                    return id(lifetime_counter) >= id(destination);
+              - switch.turn_off: motorinput1
+              - switch.turn_on: motorinput2
+              - delay: 600ms
+              - switch.turn_off: motorinput2
+              
+      - if:
+          condition:
+            - lambda: |-
+                return id(direction) == 2;
+          then:
+              -  switch.turn_on: motorinput2
+              - wait_until:
+                  lambda: |-
+                    return id(lifetime_counter) >= id(destination);
+              - switch.turn_off: motorinput2
+              - switch.turn_on: motorinput1
+              - delay: 600ms
+              - switch.turn_off: motorinput1
+      
+      
+      - lambda: |-
+          id(countkeep).publish_state(id(targetstate));
+ 
+  - platform: gpio
+    pin: D4
+    id: motorinput1
+    name: "Bedroom Blind motorinput1"
+  - platform: gpio
+    pin: D3
+    id: motorinput2
+    name: "Bedroom Blind motorinput2"
+  - platform: restart
+    name: "Bedroom Blind Restart"
+
+cover:
+   - platform: template
+     name: "Bedroom Blind"
+     id: bedroom_blind_cover
+     lambda: |-
+      if (id(countkeep).state == 0 ) {
+        return COVER_CLOSED;
+      } else {
+        return COVER_OPEN;
+      }
+     open_action:
+      - lambda: |-
+          id(targetstate) = 2;
+      - switch.turn_on: blindup
+      
+     close_action:
+      - lambda: |-
+          id(targetstate) = 0;
+      - switch.turn_on: blindup
+
+sensor:
+  - platform: wifi_signal
+    name: "Bedroom Blinds Wifi"
+    update_interval: 60s
+  - platform: pulse_counter
+    pin: D2
+    name: "Pulse Counter"
+    id: pulsecount
+    internal: true
+    update_interval: 10ms
+    count_mode:
+        rising_edge : DISABLE
+        falling_edge: INCREMENT
+    filters:
+      - lambda: |-
+          static float total_pulses = 0.0;
+          total_pulses += x * 1 / 6000.0;
+          id(lifetime_counter) = (total_pulses / 7100);
+          return x ;
+          
+  - platform: template
+    id: countkeep
+    internal: false
+    name: CountKeep   
+    update_interval: 20ms
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: D1
+      mode: INPUT_PULLUP
+      inverted: false
+    internal: true
+    name: "Bedroom Blinds Btn"
+    on_press:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(bedroom_blind_cover).position == COVER_CLOSED;'
+            then:
+              cover.open: bedroom_blind_cover
+            else:
+              cover.close: bedroom_blind_cover      
+
